@@ -957,6 +957,12 @@ void DoomOPL::InitChannel(opl_channel_data_t *channel)
 
 int DoomOPL::midi_init(unsigned int rate)
 {
+    opl_rate = rate;
+    return InitSynth();
+}
+
+int DoomOPL::InitSynth()
+{
     char *env;
     unsigned int i;
     char *pos;
@@ -1017,7 +1023,7 @@ int DoomOPL::midi_init(unsigned int rate)
     for (i = 0; i < num_chips; i++)
     {
         opl[i] = getchip();
-        if (!opl[i] || !opl[i]->fm_init(rate))
+        if (!opl[i] || !opl[i]->fm_init(opl_rate))
         {
             return 0;
         }
@@ -1038,6 +1044,20 @@ int DoomOPL::midi_init(unsigned int rate)
     InitVoices();
 
     return 1;
+}
+
+void DoomOPL::midi_panic()
+{
+    for(int i = 0; i < 16; i++)
+    {
+        AllNotesOff(TrackChannelForEvent(i), 0);
+    }
+}
+
+void DoomOPL::midi_reset()
+{
+    midi_panic();
+    InitSynth();
 }
 
 void DoomOPL::midi_generate(signed short *buffer, unsigned int length) {

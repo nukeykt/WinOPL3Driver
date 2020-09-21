@@ -378,8 +378,11 @@ private:
     void ControllerEvent(unsigned char channel_num, unsigned char controller, unsigned char param);
     void PitchBendEvent(unsigned char channel_num, unsigned char bend);
     void InitChannel(opl_channel_data_t *channel);
+    int InitSynth();
 public:
     int midi_init(unsigned int rate);
     void midi_write(unsigned int data);
+    void midi_panic();
+    void midi_reset();
     void midi_generate(signed short *buffer, unsigned int length);
 };
