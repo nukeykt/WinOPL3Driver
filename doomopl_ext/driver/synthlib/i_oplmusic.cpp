@@ -20,75 +20,75 @@
 #include "i_oplmusic.h"
 
 void DoomOPL::OPL_WriteRegister(unsigned int chip, unsigned int reg, unsigned char data) {
-	opl[chip]->fm_writereg(reg, data);
+    opl[chip]->fm_writereg(reg, data);
 }
 
 void DoomOPL::OPL_InitRegisters(unsigned int chip)
 {
-	unsigned int r;
+    unsigned int r;
 
-	// Initialize level registers
+    // Initialize level registers
 
-	for (r = OPL_REGS_LEVEL; r <= OPL_REGS_LEVEL + OPL_NUM_OPERATORS; ++r)
-	{
-		OPL_WriteRegister(chip, r, 0x3f);
-	}
+    for (r = OPL_REGS_LEVEL; r <= OPL_REGS_LEVEL + OPL_NUM_OPERATORS; ++r)
+    {
+        OPL_WriteRegister(chip, r, 0x3f);
+    }
 
-	// Initialize other registers
-	// These two loops write to registers that actually don't exist,
-	// but this is what Doom does ...
-	// Similarly, the <= is also intenational.
+    // Initialize other registers
+    // These two loops write to registers that actually don't exist,
+    // but this is what Doom does ...
+    // Similarly, the <= is also intenational.
 
-	for (r = OPL_REGS_ATTACK; r <= OPL_REGS_WAVEFORM + OPL_NUM_OPERATORS; ++r)
-	{
-		OPL_WriteRegister(chip, r, 0x00);
-	}
+    for (r = OPL_REGS_ATTACK; r <= OPL_REGS_WAVEFORM + OPL_NUM_OPERATORS; ++r)
+    {
+        OPL_WriteRegister(chip, r, 0x00);
+    }
 
-	// More registers ...
+    // More registers ...
 
-	for (r = 1; r < OPL_REGS_LEVEL; ++r)
-	{
-		OPL_WriteRegister(chip, r, 0x00);
-	}
+    for (r = 1; r < OPL_REGS_LEVEL; ++r)
+    {
+        OPL_WriteRegister(chip, r, 0x00);
+    }
 
-	if (opl_new)
-	{
-		OPL_WriteRegister(chip, OPL_REG_NEW_MODE, 0x01);
-		// Initialize level registers
-		for (r = OPL_REGS_LEVEL; r <= OPL_REGS_LEVEL + OPL_NUM_OPERATORS; ++r)
-		{
-			OPL_WriteRegister(chip, r | 0x100, 0x3f);
-		}
+    if (opl_new)
+    {
+        OPL_WriteRegister(chip, OPL_REG_NEW_MODE, 0x01);
+        // Initialize level registers
+        for (r = OPL_REGS_LEVEL; r <= OPL_REGS_LEVEL + OPL_NUM_OPERATORS; ++r)
+        {
+            OPL_WriteRegister(chip, r | 0x100, 0x3f);
+        }
 
-		// Initialize other registers
-		// These two loops write to registers that actually don't exist,
-		// but this is what Doom does ...
-		// Similarly, the <= is also intenational.
+        // Initialize other registers
+        // These two loops write to registers that actually don't exist,
+        // but this is what Doom does ...
+        // Similarly, the <= is also intenational.
 
-		for (r = OPL_REGS_ATTACK; r <= OPL_REGS_WAVEFORM + OPL_NUM_OPERATORS; ++r)
-		{
-			OPL_WriteRegister(chip, r | 0x100, 0x00);
-		}
+        for (r = OPL_REGS_ATTACK; r <= OPL_REGS_WAVEFORM + OPL_NUM_OPERATORS; ++r)
+        {
+            OPL_WriteRegister(chip, r | 0x100, 0x00);
+        }
 
-		// More registers ...
+        // More registers ...
 
-		for (r = 1; r < OPL_REGS_LEVEL; ++r)
-		{
-			OPL_WriteRegister(chip, r | 0x100, 0x00);
-		}
-	}
+        for (r = 1; r < OPL_REGS_LEVEL; ++r)
+        {
+            OPL_WriteRegister(chip, r | 0x100, 0x00);
+        }
+    }
 
-	// Re-initialize the low registers:
+    // Re-initialize the low registers:
 
-	// Reset both timers and enable interrupts:
-	OPL_WriteRegister(chip, OPL_REG_TIMER_CTRL, 0x60);
-	OPL_WriteRegister(chip, OPL_REG_TIMER_CTRL, 0x80);
+    // Reset both timers and enable interrupts:
+    OPL_WriteRegister(chip, OPL_REG_TIMER_CTRL, 0x60);
+    OPL_WriteRegister(chip, OPL_REG_TIMER_CTRL, 0x80);
 
-	// "Allow FM chips to control the waveform of each operator":
-	OPL_WriteRegister(chip, OPL_REG_WAVEFORM_ENABLE, 0x20);
+    // "Allow FM chips to control the waveform of each operator":
+    OPL_WriteRegister(chip, OPL_REG_WAVEFORM_ENABLE, 0x20);
 
-	// Keyboard split point on (?)
-	OPL_WriteRegister(chip, OPL_REG_FM_MODE, 0x40);
+    // Keyboard split point on (?)
+    OPL_WriteRegister(chip, OPL_REG_FM_MODE, 0x40);
     OPL_WriteRegister(chip, OPL_REG_NEW_MODE, opl_new | (opl_extpan << 1));
 }
 
@@ -96,25 +96,25 @@ void DoomOPL::OPL_InitRegisters(unsigned int chip)
 
 bool DoomOPL::LoadInstrumentTable(void)
 {
-	byte *lump;
-	unsigned int size;
+    byte *lump;
+    unsigned int size;
 
-	FILE *file = fopen("C:\\OPLSynth\\GENMIDI.OP2", "rb");
-	if (!file)
-	{
-		return false;
-	}
-	fseek(file, 0, SEEK_END);
-	size = ftell(file);
-	fseek(file, 0, SEEK_SET);
+    FILE *file = fopen("C:\\OPLSynth\\GENMIDI.OP2", "rb");
+    if (!file)
+    {
+        return false;
+    }
+    fseek(file, 0, SEEK_END);
+    size = ftell(file);
+    fseek(file, 0, SEEK_SET);
 
     lump = (byte*)malloc(size);
 
-	if (!lump)
-	{
+    if (!lump)
+    {
         fclose(file);
-		return false;
-	}
+        return false;
+    }
 
     fread(lump, size, 1, file);
     fclose(file);
@@ -129,9 +129,9 @@ bool DoomOPL::LoadInstrumentTable(void)
 
 void DoomOPL::ReleaseVoice(unsigned int id)
 {
-	opl_voice_t *voice;
+    opl_voice_t *voice;
     unsigned int i;
-	bool doublev;
+    bool doublev;
 
     // Doom 2 1.666 OPL crash emulation.
     if (id >= voice_alloced_num)
@@ -145,9 +145,9 @@ void DoomOPL::ReleaseVoice(unsigned int id)
     VoiceKeyOff(voice);
 
     voice->channel = NULL;
-	voice->note = 0;
+    voice->note = 0;
 
-	doublev = voice->current_instr_voice != 0;
+    doublev = voice->current_instr_voice != 0;
 
     // Remove from alloced list.
 
@@ -162,10 +162,10 @@ void DoomOPL::ReleaseVoice(unsigned int id)
 
     voice_free_list[voice_free_num++] = voice;
 
-	if (doublev && opl_drv_ver < opl_doom_1_9)
-	{
-		ReleaseVoice(id);
-	}
+    if (doublev && opl_drv_ver < opl_doom_1_9)
+    {
+        ReleaseVoice(id);
+    }
 }
 
 // Load data to the specified operator
@@ -192,10 +192,10 @@ void DoomOPL::LoadOperatorData(unsigned int chip, int slot, genmidi_op_t *data,
     *volume = level;
 
     OPL_WriteRegister(chip, OPL_REGS_LEVEL + slot, level);
-	OPL_WriteRegister(chip, OPL_REGS_TREMOLO + slot, data->tremolo);
-	OPL_WriteRegister(chip, OPL_REGS_ATTACK + slot, data->attack);
-	OPL_WriteRegister(chip, OPL_REGS_SUSTAIN + slot, data->sustain);
-	OPL_WriteRegister(chip, OPL_REGS_WAVEFORM + slot, data->waveform);
+    OPL_WriteRegister(chip, OPL_REGS_TREMOLO + slot, data->tremolo);
+    OPL_WriteRegister(chip, OPL_REGS_ATTACK + slot, data->attack);
+    OPL_WriteRegister(chip, OPL_REGS_SUSTAIN + slot, data->sustain);
+    OPL_WriteRegister(chip, OPL_REGS_WAVEFORM + slot, data->waveform);
 }
 
 // Set the instrument for a particular voice.
@@ -230,19 +230,19 @@ void DoomOPL::SetVoiceInstrument(opl_voice_t *voice,
     // modulating mode, we must set both to minimum volume.
 
     LoadOperatorData(voice->chip, voice->op2 | voice->array, &data->carrier, true, &voice->car_volume);
-	LoadOperatorData(voice->chip, voice->op1 | voice->array, &data->modulator, !modulating, &voice->mod_volume);
+    LoadOperatorData(voice->chip, voice->op1 | voice->array, &data->modulator, !modulating, &voice->mod_volume);
 
     // Set feedback register that control the connection between the
     // two operators.  Turn on bits in the upper nybble; I think this
     // is for OPL3, where it turns on channel A/B.
 
-	OPL_WriteRegister(voice->chip, (OPL_REGS_FEEDBACK + voice->index) | voice->array,
+    OPL_WriteRegister(voice->chip, (OPL_REGS_FEEDBACK + voice->index) | voice->array,
                       data->feedback | voice->reg_pan);
-	
-	// Calculate voice priority.
 
-	voice->priority = 0x0f - (data->carrier.attack >> 4)
-					+ 0x0f - (data->carrier.sustain & 0x0f);
+    // Calculate voice priority.
+
+    voice->priority = 0x0f - (data->carrier.attack >> 4)
+                    + 0x0f - (data->carrier.sustain & 0x0f);
 }
 
 void DoomOPL::SetVoiceVolume(opl_voice_t *voice, unsigned int volume)
@@ -300,7 +300,7 @@ void DoomOPL::SetVoiceVolume(opl_voice_t *voice, unsigned int volume)
 void DoomOPL::SetVoicePan(opl_voice_t *voice, unsigned int pan)
 {
     genmidi_voice_t *opl_voice;
-    
+
     voice->reg_pan = pan;
     opl_voice = &voice->current_instr->voices[voice->current_instr_voice];
 
@@ -320,18 +320,18 @@ void DoomOPL::SetVoicePanMIDI(opl_voice_t *voice, unsigned int pan)
 void DoomOPL::InitVoices(void)
 {
     unsigned int i;
-    
+
     voice_free_num = opl_voices;
     voice_alloced_num = 0;
 
     // Initialize each voice.
 
-	for (i = 0; i < opl_voices; ++i)
+    for (i = 0; i < opl_voices; ++i)
     {
         voices[i].index = i % OPL_NUM_VOICES;
-		voices[i].op1 = voice_operators[0][i % OPL_NUM_VOICES];
-		voices[i].op2 = voice_operators[1][i % OPL_NUM_VOICES];
-		voices[i].array = (i / OPL_NUM_VOICES) << 8;
+        voices[i].op1 = voice_operators[0][i % OPL_NUM_VOICES];
+        voices[i].op2 = voice_operators[1][i % OPL_NUM_VOICES];
+        voices[i].array = (i / OPL_NUM_VOICES) << 8;
         voices[i].chip = i / (OPL_NUM_VOICES * 2);
         voices[i].current_instr = NULL;
 
@@ -341,7 +341,7 @@ void DoomOPL::InitVoices(void)
 
 void DoomOPL::VoiceKeyOff(opl_voice_t *voice)
 {
-	OPL_WriteRegister(voice->chip, (OPL_REGS_FREQ_2 + voice->index) | voice->array, voice->freq >> 8);
+    OPL_WriteRegister(voice->chip, (OPL_REGS_FREQ_2 + voice->index) | voice->array, voice->freq >> 8);
 }
 
 opl_channel_data_t *DoomOPL::TrackChannelForEvent(unsigned char channel_num)
@@ -355,7 +355,7 @@ opl_channel_data_t *DoomOPL::TrackChannelForEvent(unsigned char channel_num)
 
 void DoomOPL::KeyOffEvent(unsigned char channel_num, unsigned char key)
 {
-	opl_channel_data_t *channel;
+    opl_channel_data_t *channel;
     unsigned int i;
 
 /*
@@ -371,17 +371,17 @@ void DoomOPL::KeyOffEvent(unsigned char channel_num, unsigned char key)
     // If it is a double voice instrument there will be two.
 
     for (i = 0; i < voice_alloced_num;)
-	{
-		if (voice_alloced_list[i]->channel == channel && voice_alloced_list[i]->key == key)
-		{
-			// Finished with this voice now.
+    {
+        if (voice_alloced_list[i]->channel == channel && voice_alloced_list[i]->key == key)
+        {
+            // Finished with this voice now.
 
-			ReleaseVoice(i);
+            ReleaseVoice(i);
 
             continue;
-		}
+        }
         i++;
-	}
+    }
 }
 
 // When all voices are in use, we must discard an existing voice to
@@ -442,23 +442,23 @@ void DoomOPL::ReplaceExistingVoiceDoom2(opl_channel_data_t *channel)
 {
     unsigned int i;
     unsigned int result;
-	unsigned int priority;
+    unsigned int priority;
 
-	result = 0;
+    result = 0;
 
-	priority = 0x8000;
+    priority = 0x8000;
 
     for (i = 0; i < voice_alloced_num - 3; i++)
     {
-		if (voice_alloced_list[i]->priority < priority
-			&& voice_alloced_list[i]->channel >= channel)
-		{
-			priority = voice_alloced_list[i]->priority;
-			result = i;
-		}
-	}
+        if (voice_alloced_list[i]->priority < priority
+            && voice_alloced_list[i]->channel >= channel)
+        {
+            priority = voice_alloced_list[i]->priority;
+            result = i;
+        }
+    }
 
-	ReleaseVoice(result);
+    ReleaseVoice(result);
 }
 
 
@@ -551,8 +551,8 @@ void DoomOPL::UpdateVoiceFrequency(opl_voice_t *voice)
 
     if (voice->freq != freq)
     {
-		OPL_WriteRegister(voice->chip, (OPL_REGS_FREQ_1 + voice->index) | voice->array, freq & 0xff);
-		OPL_WriteRegister(voice->chip, (OPL_REGS_FREQ_2 + voice->index) | voice->array, (freq >> 8) | 0x20);
+        OPL_WriteRegister(voice->chip, (OPL_REGS_FREQ_1 + voice->index) | voice->array, freq & 0xff);
+        OPL_WriteRegister(voice->chip, (OPL_REGS_FREQ_2 + voice->index) | voice->array, (freq >> 8) | 0x20);
 
         voice->freq = freq;
     }
@@ -610,7 +610,7 @@ void DoomOPL::VoiceKeyOn(opl_channel_data_t *channel,
         voice->note = note;
     }
 
-	voice->reg_pan = channel->pan;
+    voice->reg_pan = channel->pan;
 
     // Program the voice with the instrument data:
 
@@ -631,8 +631,8 @@ void DoomOPL::KeyOnEvent(unsigned char channel_num, unsigned char key, unsigned 
 {
     genmidi_instr_t *instrument;
     opl_channel_data_t *channel;
-	unsigned int note, voicenum;
-	bool doublev;
+    unsigned int note, voicenum;
+    bool doublev;
 
 /*
     printf("note on: channel %i, %i, %i\n",
@@ -656,9 +656,9 @@ void DoomOPL::KeyOnEvent(unsigned char channel_num, unsigned char key, unsigned 
     channel = TrackChannelForEvent(channel_num);
 
     // Percussion channel is treated differently.
-	if (channel_num == 9)
+    if (channel_num == 9)
     {
-        if (key < 35 || key > 81)
+        if ((key < 35) || (key > 81))
         {
             return;
         }
@@ -671,7 +671,7 @@ void DoomOPL::KeyOnEvent(unsigned char channel_num, unsigned char key, unsigned 
         instrument = channel->instrument;
     }
 
-	doublev = ((short)(instrument->flags) & GENMIDI_FLAG_2VOICE) != 0;
+    doublev = ((short)(instrument->flags) & GENMIDI_FLAG_2VOICE) != 0;
 
     switch (opl_drv_ver)
     {
@@ -872,12 +872,12 @@ void DoomOPL::PitchBendEvent(unsigned char channel_num, unsigned char bend)
     // Update the channel bend value.  Only the MSB of the pitch bend
     // value is considered: this is what Doom does.
 
-	channel = TrackChannelForEvent(channel_num);
+    channel = TrackChannelForEvent(channel_num);
     channel->bend = bend - 64;
 
     // Update all voices for this channel.
 
-	for (i = 0; i < voice_alloced_num; ++i)
+    for (i = 0; i < voice_alloced_num; ++i)
     {
         if (voice_alloced_list[i]->channel == channel)
         {
@@ -905,16 +905,16 @@ void DoomOPL::PitchBendEvent(unsigned char channel_num, unsigned char bend)
 
 void DoomOPL::midi_write(unsigned int data)
 {
-	unsigned char event_type = data & 0xf0;
-	unsigned char channel_num = data & 0x0f;
-	unsigned char key = (data >> 8) & 0xff;
-	unsigned char volume = (data >> 16) & 0xff;
-	if (key > 0x7f) {
-		key = 0x7f;
-	}
-	if (volume > 0x7f) {
-		volume = 0x7f;
-	}
+    unsigned char event_type = data & 0xf0;
+    unsigned char channel_num = data & 0x0f;
+    unsigned char key = (data >> 8) & 0xff;
+    unsigned char volume = (data >> 16) & 0xff;
+    if (key > 0x7f) {
+        key = 0x7f;
+    }
+    if (volume > 0x7f) {
+        volume = 0x7f;
+    }
     switch (event_type)
     {
         case MIDI_EVENT_NOTE_OFF:
@@ -922,19 +922,19 @@ void DoomOPL::midi_write(unsigned int data)
             break;
 
         case MIDI_EVENT_NOTE_ON:
-			KeyOnEvent(channel_num, key, volume);
+            KeyOnEvent(channel_num, key, volume);
             break;
 
         case MIDI_EVENT_CONTROLLER:
-			ControllerEvent(channel_num, key, volume);
+            ControllerEvent(channel_num, key, volume);
             break;
 
         case MIDI_EVENT_PROGRAM_CHANGE:
-			ProgramChangeEvent(channel_num, key);
+            ProgramChangeEvent(channel_num, key);
             break;
 
         case MIDI_EVENT_PITCH_BEND:
-			PitchBendEvent(channel_num, volume);
+            PitchBendEvent(channel_num, volume);
             break;
 
         default:
@@ -949,48 +949,48 @@ void DoomOPL::InitChannel(opl_channel_data_t *channel)
     // TODO: Work out sensible defaults?
 
     channel->instrument = &main_instrs[0];
-	channel->volume = 127;
-	channel->pan = 0x30;
+    channel->volume = 127;
+    channel->pan = 0x30;
     channel->bend = 0;
     channel->pan_midi = 64;
 }
 
 int DoomOPL::midi_init(unsigned int rate)
 {
-	char *env;
-	unsigned int i;
+    char *env;
+    unsigned int i;
     char *pos;
-	
-	/*opl = getchip();
-	if (!opl || !opl->fm_init(rate))
-	{
-		return 0;
-	}*/
 
-	memset(channels, 0, sizeof(channels));
-	main_instrs = NULL;
-	percussion_instrs = NULL;
-	memset(voices, 0, sizeof(voices));
-	voice_alloced_num = 0;
+    /*opl = getchip();
+    if (!opl || !opl->fm_init(rate))
+    {
+        return 0;
+    }*/
+
+    memset(channels, 0, sizeof(channels));
+    main_instrs = NULL;
+    percussion_instrs = NULL;
+    memset(voices, 0, sizeof(voices));
+    voice_alloced_num = 0;
     voice_free_num = 0;
-	opl_new = 0;
-	opl_voices = OPL_NUM_VOICES;
-	opl_drv_ver = opl_doom_1_9;
+    opl_new = 0;
+    opl_voices = OPL_NUM_VOICES;
+    opl_drv_ver = opl_doom_1_9;
     opl_extpan = 0;
     num_chips = 1;
 
-	env = getenv("DMXOPTION");
-	if (env)
-	{
-		if (strstr(env, "-opl3"))
-		{
-			opl_new = 1;
-			opl_voices = OPL_NUM_VOICES * 2;
-		}
-		if (strstr(env, "-doom1"))
-		{
-			opl_drv_ver = opl_doom1_1_666;
-		}
+    env = getenv("DMXOPTION");
+    if (env)
+    {
+        if (strstr(env, "-opl3"))
+        {
+            opl_new = 1;
+            opl_voices = OPL_NUM_VOICES * 2;
+        }
+        if (strstr(env, "-doom1"))
+        {
+            opl_drv_ver = opl_doom1_1_666;
+        }
         if (strstr(env, "-doom2"))
         {
             opl_drv_ver = opl_doom2_1_666;
@@ -1013,7 +1013,7 @@ int DoomOPL::midi_init(unsigned int rate)
         {
             opl_extpan = 1;
         }
-	}
+    }
     for (i = 0; i < num_chips; i++)
     {
         opl[i] = getchip();
@@ -1031,9 +1031,9 @@ int DoomOPL::midi_init(unsigned int rate)
         return 0;
     }
 
-	for (i = 0; i < MIDI_CHANNELS_PER_TRACK; i++) {
-		InitChannel(&channels[i]);
-	}
+    for (i = 0; i < MIDI_CHANNELS_PER_TRACK; i++) {
+        InitChannel(&channels[i]);
+    }
 
     InitVoices();
 
@@ -1049,6 +1049,6 @@ void DoomOPL::midi_generate(signed short *buffer, unsigned int length) {
 }
 
 midisynth *getsynth() {
-	DoomOPL *synth = new DoomOPL;
-	return synth;
+    DoomOPL *synth = new DoomOPL;
+    return synth;
 }

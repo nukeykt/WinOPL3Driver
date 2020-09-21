@@ -113,7 +113,7 @@ private:
 public:
 	int Init(Bit16s *buffer, unsigned int bufferSize, unsigned int chunkSize, bool useRingBuffer, unsigned int sampleRate) {
 		DWORD callbackType = CALLBACK_NULL;
-		DWORD_PTR callback = NULL;
+		DWORD_PTR callback = (DWORD_PTR)NULL;
 		hEvent = NULL;
 		if (!useRingBuffer) {
 			hEvent = CreateEvent(NULL, false, true, NULL);
@@ -222,7 +222,7 @@ public:
 		MMTIME mmTime;
 		mmTime.wType = TIME_SAMPLES;
 
-		if (waveOutGetPosition(hWaveOut, &mmTime, sizeof MMTIME) != MMSYSERR_NOERROR) {
+		if (waveOutGetPosition(hWaveOut, &mmTime, sizeof (MMTIME)) != MMSYSERR_NOERROR) {
 			MessageBox(NULL, L"Failed to get current playback position", L"OPL3", MB_OK | MB_ICONEXCLAMATION);
 			return 10;
 		}
@@ -244,31 +244,33 @@ public:
 		return mmTime.u.sample + getPosWraps * (1 << 27);
 	}
 
-	static void RenderingThread(void *) {
-		if (waveOut.chunks == 1) {
-			// Rendering using single looped ring buffer
-			while (!waveOut.stopProcessing) {
-				midiSynth.RenderAvailableSpace();
-			}
-		} else {
-			while (!waveOut.stopProcessing) {
-				bool allBuffersRendered = true;
-				for (UINT i = 0; i < waveOut.chunks; i++) {
-					if (waveOut.WaveHdr[i].dwFlags & WHDR_DONE) {
-						allBuffersRendered = false;
-						midiSynth.Render((Bit16s *)waveOut.WaveHdr[i].lpData, waveOut.WaveHdr[i].dwBufferLength / 4);
-						if (waveOutWrite(waveOut.hWaveOut, &waveOut.WaveHdr[i], sizeof(WAVEHDR)) != MMSYSERR_NOERROR) {
-							MessageBox(NULL, L"Failed to write block to device", L"OPL3", MB_OK | MB_ICONEXCLAMATION);
-						}
+	static void RenderingThread(void *);
+} s_waveOut;
+
+void WaveOutWin32::RenderingThread(void *) {
+	if (s_waveOut.chunks == 1) {
+		// Rendering using single looped ring buffer
+		while (!s_waveOut.stopProcessing) {
+			midiSynth.RenderAvailableSpace();
+		}
+	} else {
+		while (!s_waveOut.stopProcessing) {
+			bool allBuffersRendered = true;
+			for (UINT i = 0; i < s_waveOut.chunks; i++) {
+				if (s_waveOut.WaveHdr[i].dwFlags & WHDR_DONE) {
+					allBuffersRendered = false;
+					midiSynth.Render((Bit16s *)s_waveOut.WaveHdr[i].lpData, s_waveOut.WaveHdr[i].dwBufferLength / 4);
+					if (waveOutWrite(s_waveOut.hWaveOut, &s_waveOut.WaveHdr[i], sizeof(WAVEHDR)) != MMSYSERR_NOERROR) {
+						MessageBox(NULL, L"Failed to write block to device", L"OPL3", MB_OK | MB_ICONEXCLAMATION);
 					}
 				}
-				if (allBuffersRendered) {
-					WaitForSingleObject(waveOut.hEvent, INFINITE);
-				}
+			}
+			if (allBuffersRendered) {
+				WaitForSingleObject(s_waveOut.hEvent, INFINITE);
 			}
 		}
 	}
-} waveOut;
+}
 
 MidiSynth::MidiSynth() {}
 
@@ -279,7 +281,7 @@ MidiSynth &MidiSynth::getInstance() {
 
 // Renders all the available space in the single looped ring buffer
 void MidiSynth::RenderAvailableSpace() {
-	DWORD playPos = waveOut.GetPos() % bufferSize;
+	DWORD playPos = s_waveOut.GetPos() % bufferSize;
 	DWORD framesToRender;
 
 	if (playPos < framesRendered) {
@@ -360,14 +362,14 @@ int MidiSynth::Init() {
 		return 1;
 	}
 
-	UINT wResult = waveOut.Init(buffer, bufferSize, chunkSize, useRingBuffer, sampleRate);
+	UINT wResult = s_waveOut.Init(buffer, bufferSize, chunkSize, useRingBuffer, sampleRate);
 	if (wResult) return wResult;
 
 	// Start playing stream
 	synth->midi_generate(buffer, bufferSize);
 	framesRendered = 0;
 
-	wResult = waveOut.Start();
+	wResult = s_waveOut.Start();
 	return wResult;
 }
 
@@ -377,7 +379,7 @@ int MidiSynth::Reset() {
 		return 0;
 #endif
 
-	UINT wResult = waveOut.Pause();
+	UINT wResult = s_waveOut.Pause();
 	if (wResult) return wResult;
 
 	synthEvent.Wait();
@@ -390,12 +392,12 @@ int MidiSynth::Reset() {
 	}
 	synthEvent.Release();
 
-	wResult = waveOut.Resume();
+	wResult = s_waveOut.Resume();
 	return wResult;
 }
 
 void MidiSynth::PushMIDI(DWORD msg) {
-	midiStream.PutMessage(msg, (waveOut.GetPos() + midiLatency) % bufferSize);
+	midiStream.PutMessage(msg, (s_waveOut.GetPos() + midiLatency) % bufferSize);
 }
 
 void MidiSynth::PlaySysex(Bit8u *bufpos, DWORD len) {
@@ -405,8 +407,8 @@ void MidiSynth::PlaySysex(Bit8u *bufpos, DWORD len) {
 }
 
 void MidiSynth::Close() {
-	waveOut.Pause();
-	waveOut.Close();
+	s_waveOut.Pause();
+	s_waveOut.Close();
 	synthEvent.Wait();
 	//synth->close();
 
