@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define __AL_MIDI_H
 
 #include "_al_midi.h"
-#include "..\interface.h"
+#include "../interface.h"
 
 enum AL_Errors
    {
@@ -85,7 +85,7 @@ public:
     int midi_init(unsigned int rate);
     void midi_write(unsigned int data);
     void midi_generate(signed short *buffer, unsigned int length);
-    char *midi_synthname(void);
+    const char *midi_synthname(void);
 };
 
 void AL_RemoveNode ( char *item, char **head, char **tail, int next, int prev );

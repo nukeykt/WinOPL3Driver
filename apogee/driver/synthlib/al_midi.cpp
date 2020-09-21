@@ -381,15 +381,15 @@ static int AL_MaxMidiChannel = 16;
     AL_AddNode( ( char * )( node ),                  \
                 ( char ** )&( ( listhead )->end ),   \
                 ( char ** )&( ( listhead )->start ), \
-                ( int )&( ( type * ) 0 )->prev,      \
-                ( int )&( ( type * ) 0 )->next )
+                ( intptr_t )&( ( type * ) 0 )->prev,      \
+                ( intptr_t )&( ( type * ) 0 )->next )
 
 #define AL_Remove( type, listhead, node )               \
     AL_RemoveNode( ( char * )( node ),                  \
                    ( char ** )&( ( listhead )->start ), \
                    ( char ** )&( ( listhead )->end ),   \
-                   ( int )&( ( type * ) 0 )->next,      \
-                   ( int )&( ( type * ) 0 )->prev )
+                   ( intptr_t )&( ( type * ) 0 )->next,      \
+                   ( intptr_t )&( ( type * ) 0 )->prev )
 
 void AL_RemoveNode
    (
@@ -484,7 +484,7 @@ void ApogeeOPL::AL_SendOutput
    {
    int port;
 
-   
+
    port = voice;
    AL_SendOutputToPort( port, reg, data );
    }
@@ -1104,7 +1104,7 @@ void ApogeeOPL::AL_NoteOff
    port = Voice[ voice ].port;
    voc  = ( voice >= NUM_VOICES ) ? voice - NUM_VOICES : voice;
 
-   
+
    AL_SendOutput( port, 0xB0 + voc, hibyte( Voice[ voice ].pitchleft ) );
 
    AL_Remove( VOICE, &Channel[ channel ].Voices, &Voice[ voice ] );
@@ -1465,7 +1465,7 @@ void ApogeeOPL::midi_generate(signed short *buffer, unsigned int length)
     chip->fm_generate(buffer, length);
 }
 
-char *ApogeeOPL::midi_synthname(void)
+const char *ApogeeOPL::midi_synthname(void)
 {
     return "TEST";
 }
