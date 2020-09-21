@@ -81,9 +81,14 @@ private:
     void AL_ProgramChange( int channel, int patch );
     void AL_SetPitchBend( int channel, int lsb, int msb );
     void AL_RegisterTimbreBank( unsigned char *timbres );
+
+    int AL_InitSynth();
+    void AL_LoadBank();
 public:
     int midi_init(unsigned int rate);
     void midi_write(unsigned int data);
+    void midi_panic();
+    void midi_reset();
     void midi_generate(signed short *buffer, unsigned int length);
     const char *midi_synthname(void);
 };

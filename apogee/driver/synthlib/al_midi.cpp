@@ -1364,35 +1364,45 @@ int ApogeeOPL::midi_init
    {
       return 0;
    }
-   memcpy(&ADLIB_TimbreBank,&FatTimbre,sizeof(FatTimbre));
-   FILE *tmb = fopen("C:\\OPLSynth\\APOGEE.TMB","rb");
-   if(tmb)
-   {
-      fseek(tmb,0,SEEK_END);
-      int size = ftell(tmb);
-      rewind(tmb);
-      if(size==256*13)
-      {
-         unsigned char timbre[256*13];
-         fread(timbre,1,256*13,tmb);
-         AL_RegisterTimbreBank(timbre);
-      }
-      fclose(tmb);
-   }
+   return AL_InitSynth();
+}
 
-   memset(VoiceLevel, 0, sizeof(VoiceLevel));
-   memset(VoiceKsl, 0, sizeof(VoiceKsl));
-   memset(VoiceReserved, 0, sizeof(VoiceReserved));
-   memset(Voice, 0, sizeof(Voice));
-   memset(&Voice_Pool, 0, sizeof(Voice_Pool));
-   memset(Channel, 0, sizeof(Channel));
+int ApogeeOPL::AL_InitSynth()
+{
+    AL_LoadBank();
 
-   AL_CalcPitchInfo();
-   AL_Reset();
-   AL_ResetVoices();
+    memset(VoiceLevel, 0, sizeof(VoiceLevel));
+    memset(VoiceKsl, 0, sizeof(VoiceKsl));
+    memset(VoiceReserved, 0, sizeof(VoiceReserved));
+    memset(Voice, 0, sizeof(Voice));
+    memset(&Voice_Pool, 0, sizeof(Voice_Pool));
+    memset(Channel, 0, sizeof(Channel));
 
-   return 1;
-   }
+    AL_CalcPitchInfo();
+    AL_Reset();
+    AL_ResetVoices();
+
+    return 1;
+}
+
+void ApogeeOPL::AL_LoadBank()
+{
+    memcpy(&ADLIB_TimbreBank, &FatTimbre, sizeof(FatTimbre));
+    FILE *tmb = fopen("C:\\OPLSynth\\APOGEE.TMB","rb");
+    if(tmb)
+    {
+       fseek(tmb,0,SEEK_END);
+       int size = ftell(tmb);
+       rewind(tmb);
+       if(size == 256*13)
+       {
+          unsigned char timbre[256*13];
+          fread(timbre,1,256*13,tmb);
+          AL_RegisterTimbreBank(timbre);
+       }
+       fclose(tmb);
+    }
+}
 
 
 /*---------------------------------------------------------------------
@@ -1458,6 +1468,18 @@ void ApogeeOPL::midi_write(unsigned int data)
     default:
         break;
     }
+}
+
+void ApogeeOPL::midi_panic()
+{
+    for (int c = 0; c < 16; ++c)
+        AL_AllNotesOff(c);
+}
+
+void ApogeeOPL::midi_reset()
+{
+    midi_panic();
+    AL_InitSynth();
 }
 
 void ApogeeOPL::midi_generate(signed short *buffer, unsigned int length)

@@ -310,7 +310,10 @@ STDAPI_(DWORD) modMessage(DWORD uDeviceID, DWORD uMsg, DWORD_PTR dwUser, DWORD_P
 		if (driver->clients[dwUser].allocated == false) {
 			return MMSYSERR_ERROR;
 		}
-		if (synthOpened) midiSynth.Reset();
+		if (synthOpened) {
+			midiSynth.Reset();
+			midiSynth.ResetSynth();
+		}
 		return CloseDriver(driver, uDeviceID, uMsg, dwUser, dwParam1, dwParam2);
 
 	case MODM_PREPARE:
@@ -318,6 +321,12 @@ STDAPI_(DWORD) modMessage(DWORD uDeviceID, DWORD uMsg, DWORD_PTR dwUser, DWORD_P
 
 	case MODM_UNPREPARE:
 		return MMSYSERR_NOTSUPPORTED;
+
+	case MODM_RESET:
+		if (synthOpened) {
+			midiSynth.PanicSynth();
+		}
+		return MMSYSERR_NOERROR;
 
 	case MODM_GETDEVCAPS:
 		return modGetCaps((PVOID)dwParam1, (DWORD)dwParam2);
