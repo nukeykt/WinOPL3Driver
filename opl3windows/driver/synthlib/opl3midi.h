@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include "opl3type.h"
 #include "gmtimbre.h"
-#include "..\interface.h"
+#include "../interface.h"
 
 #define OPL_LSI             0x00
 #define OPL_TIMER           0x04
@@ -125,5 +125,5 @@ public:
     int midi_init(unsigned int rate);
     void midi_write(unsigned int data);
     void midi_generate(signed short *buffer, unsigned int length);
-    char *midi_synthname(void);
-}; 
+    const char *midi_synthname(void);
+};

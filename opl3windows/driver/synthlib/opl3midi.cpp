@@ -85,7 +85,7 @@ opl_voice *OPL3MIDI::opl_allocvoice(opl_timbre *timbre)
     uint32_t time;
     uint32_t i;
     int32_t id;
-    
+
     for (i = 0; i < opl_voice_num; i++)
     {
         if (opl_voices[i].time == 0)
@@ -555,7 +555,7 @@ void OPL3MIDI::midi_generate(signed short *buffer, unsigned int length) {
     opl_chip->fm_generate(buffer, length);
 }
 
-char *OPL3MIDI::midi_synthname(void) {
+const char *OPL3MIDI::midi_synthname(void) {
     return "TEST";
 }
 

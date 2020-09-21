@@ -20,6 +20,83 @@
 #define MAX_DRIVERS 8
 #define MAX_CLIENTS 8 // Per driver
 
+
+#ifdef __MINGW32__
+
+#if !defined(MM_MPU401_MIDIOUT) && !defined(MM_MPU401_MIDIOUT)
+typedef struct tagMIDIOUTCAPS2A {
+	WORD wMid;
+	WORD wPid;
+	MMVERSION vDriverVersion;
+	CHAR szPname[MAXPNAMELEN];
+	WORD wTechnology;
+	WORD wVoices;
+	WORD wNotes;
+	WORD wChannelMask;
+	DWORD dwSupport;
+	GUID ManufacturerGuid;
+	GUID ProductGuid;
+	GUID NameGuid;
+} MIDIOUTCAPS2A,*PMIDIOUTCAPS2A,*NPMIDIOUTCAPS2A,*LPMIDIOUTCAPS2A;
+
+typedef struct tagMIDIOUTCAPS2W {
+	WORD wMid;
+	WORD wPid;
+	MMVERSION vDriverVersion;
+	WCHAR szPname[MAXPNAMELEN];
+	WORD wTechnology;
+	WORD wVoices;
+	WORD wNotes;
+	WORD wChannelMask;
+	DWORD dwSupport;
+	GUID ManufacturerGuid;
+	GUID ProductGuid;
+	GUID NameGuid;
+} MIDIOUTCAPS2W,*PMIDIOUTCAPS2W,*NPMIDIOUTCAPS2W,*LPMIDIOUTCAPS2W;
+#endif
+
+#ifndef MM_UNMAPPED
+#define MM_UNMAPPED 0xffff
+#endif
+#ifndef MM_MPU401_MIDIOUT
+#define MM_MPU401_MIDIOUT 10
+#endif
+
+typedef BOOL (APIENTRY *DriverCallbackPtr)(DWORD_PTR dwCallback,
+										   DWORD dwFlags,
+										   HDRVR hDevice,
+										   DWORD dwMsg,
+										   DWORD_PTR dwUser,
+										   DWORD_PTR dwParam1,
+										   DWORD_PTR dwParam2);
+
+static HMODULE           s_winmm_dll = NULL;
+static DriverCallbackPtr s_DriverCallback = NULL;
+
+#define DriverCallback s_DriverCallback
+
+static void initWorkarounds()
+{
+	s_winmm_dll = LoadLibraryW(L"winmm.dll");
+	if (s_winmm_dll) {
+		s_DriverCallback = (DriverCallbackPtr)GetProcAddress(s_winmm_dll, "DriverCallback");
+		if (!s_DriverCallback)
+			MessageBoxW(NULL, L"Failed to get a workaround for DriverCallback", L"libADLMIDI", MB_OK | MB_ICONEXCLAMATION);
+	} else {
+		MessageBoxW(NULL, L"Failed to open a library for a workaround for DriverCallback", L"libADLMIDI", MB_OK | MB_ICONEXCLAMATION);
+	}
+}
+
+static void freeWorkarounds()
+{
+	if (s_winmm_dll)
+		FreeLibrary(s_winmm_dll);
+	s_winmm_dll = NULL;
+	s_DriverCallback = NULL;
+}
+#endif
+
+
 static OPL3Emu::MidiSynth &midiSynth = OPL3Emu::MidiSynth::getInstance();
 static bool synthOpened = false;
 //static HWND hwnd = NULL;
@@ -41,6 +118,9 @@ struct Driver {
 STDAPI_(LONG) DriverProc(DWORD dwDriverID, HDRVR hdrvr, WORD wMessage, DWORD dwParam1, DWORD dwParam2) {
 	switch(wMessage) {
 	case DRV_LOAD:
+#ifdef __MINGW32__
+		initWorkarounds();
+#endif
 		memset(drivers, 0, sizeof(drivers));
 		driverCount = 0;
 		return DRV_OK;
@@ -84,6 +164,9 @@ STDAPI_(LONG) DriverProc(DWORD dwDriverID, HDRVR hdrvr, WORD wMessage, DWORD dwP
 	case DRV_DISABLE:
 		return DRV_OK;
 	case DRV_FREE:
+#ifdef __MINGW32__
+		freeWorkarounds();
+#endif
 		return DRV_OK;
 	case DRV_REMOVE:
 		return DRV_OK;
@@ -161,6 +244,10 @@ HRESULT modGetCaps(PVOID capsPtr, DWORD capsSize) {
 
 void DoCallback(int driverNum, DWORD_PTR clientNum, DWORD msg, DWORD_PTR param1, DWORD_PTR param2) {
 	Driver::Client *client = &drivers[driverNum].clients[clientNum];
+#ifdef __MINGW32__
+	if (s_DriverCallback)
+		initWorkarounds();
+#endif
 	DriverCallback(client->callback, client->flags, drivers[driverNum].hdrvr, msg, client->instance, param1, param2);
 }
 
@@ -189,7 +276,7 @@ LONG OpenDriver(Driver *driver, UINT uDeviceID, UINT uMsg, DWORD_PTR dwUser, DWO
 	driver->clients[clientNum].instance = desc->dwInstance;
 	*(LONG *)dwUser = clientNum;
 	driver->clientCount++;
-	DoCallback(uDeviceID, clientNum, MOM_OPEN, NULL, NULL);
+	DoCallback(uDeviceID, clientNum, MOM_OPEN, (DWORD_PTR)NULL, (DWORD_PTR)NULL);
 	return MMSYSERR_NOERROR;
 }
 
@@ -199,7 +286,7 @@ LONG CloseDriver(Driver *driver, UINT uDeviceID, UINT uMsg, DWORD_PTR dwUser, DW
 	}
 	driver->clients[dwUser].allocated = false;
 	driver->clientCount--;
-	DoCallback(uDeviceID, dwUser, MOM_CLOSE, NULL, NULL);
+	DoCallback(uDeviceID, dwUser, MOM_CLOSE, (DWORD_PTR)NULL, (DWORD_PTR)NULL);
 	return MMSYSERR_NOERROR;
 }
 
@@ -213,7 +300,7 @@ STDAPI_(DWORD) modMessage(DWORD uDeviceID, DWORD uMsg, DWORD_PTR dwUser, DWORD_P
 			if (midiSynth.Init() != 0) return MMSYSERR_ERROR;
 			synthOpened = true;
 		}
-		instance = NULL;
+		instance = (DWORD)NULL;
 		DWORD res;
 		res = OpenDriver(driver, uDeviceID, uMsg, dwUser, dwParam1, dwParam2);
 		driver->clients[*(LONG *)dwUser].synth_instance = instance;
@@ -253,8 +340,8 @@ STDAPI_(DWORD) modMessage(DWORD uDeviceID, DWORD uMsg, DWORD_PTR dwUser, DWORD_P
 		midiSynth.PlaySysex((unsigned char*)midiHdr->lpData, midiHdr->dwBufferLength);
 		midiHdr->dwFlags |= MHDR_DONE;
 		midiHdr->dwFlags &= ~MHDR_INQUEUE;
-		DoCallback(uDeviceID, dwUser, MOM_DONE, dwParam1, NULL);
- 		return MMSYSERR_NOERROR;
+		DoCallback(uDeviceID, dwUser, MOM_DONE, dwParam1, (DWORD_PTR)NULL);
+		return MMSYSERR_NOERROR;
 
 	case MODM_GETNUMDEVS:
 		return 0x1;
