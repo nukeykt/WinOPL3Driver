@@ -63,6 +63,8 @@ public:
 	int Init();
 	void Close();
 	int Reset();
+	void ResetSynth();
+	void PanicSynth();
 	void RenderAvailableSpace();
 	void Render(Bit16s *bufpos, DWORD totalFrames);
 	void PushMIDI(DWORD msg);

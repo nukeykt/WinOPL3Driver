@@ -516,7 +516,6 @@ void OPL3MIDI::midi_write(unsigned int data)
             {
                 if (opl_drum_maps[parm1].base != 0xff)
                 {
-
                     opl_midikeyon(channelp, opl_drum_maps[parm1].note, &opl_timbres[opl_drum_maps[parm1].base + 128], parm2);
                 }
             }
@@ -548,6 +547,28 @@ void OPL3MIDI::midi_write(unsigned int data)
     case MIDI_PITCHBEND:
         opl_midipitchbend(channelp, parm1, parm2);
         break;
+    }
+}
+
+void OPL3MIDI::midi_panic()
+{
+    for (int c = 0; c < 16; ++c)
+        opl_midikeyoffall(&opl_channels[c]);
+}
+
+void OPL3MIDI::midi_reset()
+{
+    int i;
+
+    midi_panic();
+
+    for (i = 0; i < 16; i++)
+    {
+        opl_channels[i].timbre = &opl_timbres[0];
+        opl_channels[i].pitch = 0;
+        opl_channels[i].volume = 0;
+        opl_channels[i].pan = 0xff;
+        opl_channels[i].sustained = false;
     }
 }
 
