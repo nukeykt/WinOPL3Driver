@@ -19,3 +19,7 @@ CMakeSettings.json
 *.dll
 *.dylib
 
+Debug/
+Release/
+ipch/
+*.opendb
