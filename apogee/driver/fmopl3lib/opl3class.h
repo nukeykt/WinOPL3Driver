@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Alexey Khokholov (Nuke.YKT)
+// Copyright (C) 2015-2017 Alexey Khokholov (Nuke.YKT)
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -12,19 +12,13 @@
 // GNU General Public License for more details.
 //
 
-#include "..\interface.h"
+#include "../interface.h"
 #include "opl3.h"
 
 
 class opl3class : public fm_chip {
 private:
     opl3_chip chip;
-    Bit64u counter;
-    Bit64u lastwrite;
-    Bit16u command[8192][2];
-    Bit64u time[8192];
-    Bit16u strpos;
-    Bit16s endpos;
 public:
 	int fm_init(unsigned int rate);
 	void fm_writereg(unsigned short reg, unsigned char data);
