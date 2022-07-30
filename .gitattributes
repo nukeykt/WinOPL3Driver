@@ -1,5 +1,0 @@
-*.rc				text eol=crlf
-*.sln				text eol=crlf
-*.vcxproj			text eol=crlf
-*.def				text eol=crlf
-*.bat				text eol=crlf
