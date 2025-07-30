@@ -127,7 +127,7 @@ public:
 			callbackType = CALLBACK_EVENT;
 		}
 
-		PCMWAVEFORMAT wFormat = {WAVE_FORMAT_PCM, 2, sampleRate, sampleRate * 4, 4, 16};
+		WAVEFORMATEX wFormat = {WAVE_FORMAT_PCM, 2, sampleRate, sampleRate * 4, 4, 16, 0};
 
 		// Open waveout device
 		int wResult = waveOutOpen(&hWaveOut, WAVE_MAPPER, (LPWAVEFORMATEX)&wFormat, callback, (DWORD_PTR)&midiSynth, callbackType);
