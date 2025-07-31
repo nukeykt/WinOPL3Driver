@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2015 Alexey Khokholov (Nuke.YKT)
+// Copyright (C) 2015-2017 Alexey Khokholov (Nuke.YKT)
 //
 // This program is free software; you can redistribute it and/or
 // modify it under the terms of the GNU General Public License
@@ -15,48 +15,19 @@
 #include <string.h>
 #include "opl3class.h"
 
-const Bit64u lat = (50 * 49716) / 1000;
-
 
 int opl3class::fm_init(unsigned int rate) {
-	chip_reset(&chip, rate);
-
-    memset(command,0,sizeof(command));
-    memset(time, 0, sizeof(time));
-    counter = 0;
-    lastwrite = 0;
-    strpos = 0;
-    endpos = 0;
+    OPL3_Reset(&chip, rate);
 
 	return 1;
 }
 
 void opl3class::fm_writereg(unsigned short reg, unsigned char data) {
-    command[endpos % 8192][0] = reg;
-    command[endpos % 8192][1] = data;
-    Bit64u t1 = lastwrite + 2;
-    Bit64u t2 = counter + lat;
-    if (t2 > t1)
-    {
-        t1 = t2;
-    }
-    time[endpos % 8192] = t1;
-    lastwrite = t1;
-    endpos = (endpos + 1) % 8192;
+    OPL3_WriteRegBuffered(&chip, reg, data);
 }
 
 void opl3class::fm_generate(signed short *buffer, unsigned int len) {
-    for (unsigned int i = 0; i < len; i++)
-    {
-        while (strpos != endpos && time[strpos] < counter)
-        {
-            chip_write(&chip, command[strpos][0], command[strpos][1]);
-            strpos = (strpos + 1) % 8192;
-        }
-        chip_generate(&chip, (Bit16s*)buffer);
-        buffer += 2;
-        counter++;
-    }
+    OPL3_GenerateStream(&chip, buffer, len);
 }
 
 fm_chip *getchip() {
